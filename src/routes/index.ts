@@ -1,3 +1,4 @@
+// src/routes/index.ts
 import { Router } from "express";
 import { supabaseAdmin } from "../config/supabase";
 import authRoutes from "../modules/auth/auth.routes";
