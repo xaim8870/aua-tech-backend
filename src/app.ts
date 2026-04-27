@@ -1,6 +1,6 @@
 // src/app.ts
 import express from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import routes from "./routes";
 
 const app = express();
@@ -21,12 +21,29 @@ const allowedOrigins = [
   return typeof origin === "string" && origin.length > 0;
 });
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    // Allow tools like curl/Postman/server-to-server requests with no Origin header
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked by CORS: ${origin}`);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+
+// Explicitly handle preflight requests before JSON/routes
+app.options("*", cors(corsOptions));
 
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
