@@ -23,7 +23,6 @@ const allowedOrigins = [
 
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
-    // Allow tools like curl/Postman/server-to-server requests with no Origin header
     if (!origin) {
       return callback(null, true);
     }
@@ -40,10 +39,9 @@ const corsOptions: CorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+// This handles normal CORS + OPTIONS preflight.
+// Do not use app.options("*", ...) with your Express version.
 app.use(cors(corsOptions));
-
-// Explicitly handle preflight requests before JSON/routes
-app.options("*", cors(corsOptions));
 
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
