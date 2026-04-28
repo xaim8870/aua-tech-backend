@@ -1,31 +1,33 @@
+//src/modules/leads/leads.service.ts
 import { supabaseAdmin } from "../../config/supabase";
 import { CreateLeadInput, LeadStatus } from "./leads.types";
 import { sendLeadEmail } from "../notifications/email.service";
 
 export class LeadsService {
   static async createLead(data: CreateLeadInput) {
-    const { data: lead, error } = await supabaseAdmin
-      .from("leads")
-      .insert({
-        ...data,
-        status: "new",
-      })
-      .select("*")
-      .single();
+  const { data: lead, error } = await supabaseAdmin
+    .from("leads")
+    .insert({
+      ...data,
+      status: "new",
+    })
+    .select("*")
+    .single();
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    try {
-      await sendLeadEmail(lead);
-    } catch (emailError) {
-      console.error("Failed to send lead email:", emailError);
-    }
-
-    return lead;
+  if (error) {
+    throw new Error(error.message);
   }
 
+  // Send email in the background.
+  // Do not make the user wait for SMTP.
+  setImmediate(() => {
+    sendLeadEmail(lead).catch((emailError) => {
+      console.error("Failed to send lead email:", emailError);
+    });
+  });
+
+  return lead;
+}
   static async getLeads() {
     const { data, error } = await supabaseAdmin
       .from("leads")

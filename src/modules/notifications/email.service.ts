@@ -1,15 +1,31 @@
+// src/modules/notifications/email.service.ts
+import dns from "node:dns";
 import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { env } from "../../config/env";
 
-const transporter = nodemailer.createTransport({
+// Railway was trying IPv6 for Gmail SMTP.
+// This makes Node prefer IPv4 first.
+dns.setDefaultResultOrder("ipv4first");
+
+const smtpPort = Number(env.SMTP_PORT);
+
+const transportOptions: SMTPTransport.Options = {
   host: env.SMTP_HOST,
-  port: Number(env.SMTP_PORT),
-  secure: false,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
   },
-});
+  requireTLS: smtpPort === 587,
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 10000,
+  dnsTimeout: 5000,
+};
+
+const transporter = nodemailer.createTransport(transportOptions);
 
 export const verifyEmailTransport = async () => {
   try {
